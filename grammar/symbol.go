@@ -5,29 +5,29 @@ import (
 	"strconv"
 )
 
-type SymbolID int
+type bareSymbolID int
 
 const (
-	symbolIDNil   = SymbolID(0)
-	symbolIDStart = SymbolID(1)
+	bareSymbolIDNil   = bareSymbolID(0)
+	bareSymbolIDStart = bareSymbolID(1)
 )
 
-func NewSymbolID() SymbolID {
-	return symbolIDStart
+func newBareSymbolID() bareSymbolID {
+	return bareSymbolIDStart
 }
 
-func (sid SymbolID) String() string {
-	return strconv.Itoa(int(sid))
+func (id bareSymbolID) String() string {
+	return strconv.Itoa(int(id))
 }
 
-func (sid SymbolID) IsNil() bool {
-	return sid == symbolIDNil
+func (id bareSymbolID) isNil() bool {
+	return id == bareSymbolIDNil
 }
 
-func (sid *SymbolID) Next() SymbolID {
-	id := *sid
-	*sid = *sid + 1
-	return id
+func (id *bareSymbolID) next() bareSymbolID {
+	nextID := *id
+	*id = *id + 1
+	return nextID
 }
 
 type SymbolKind string
@@ -54,64 +54,112 @@ func (sk SymbolKind) IsNonTerminalSymbol() bool {
 	return sk == symbolKindNonTerminal
 }
 
+type symbolIDGenerator struct {
+	bareID bareSymbolID
+}
+
+func newSymbolIDGenerator() *symbolIDGenerator {
+	return &symbolIDGenerator{
+		bareID: newBareSymbolID(),
+	}
+}
+
+func (g *symbolIDGenerator) next(kind SymbolKind) (SymbolID, bareSymbolID) {
+	if kind.IsNil() {
+		return symbolIDNil, bareSymbolIDNil
+	}
+
+	bareID := g.bareID.next()
+
+	prefix := ""
+	if kind.IsTerminalSymbol() {
+		prefix = "t"
+	} else if kind.IsNonTerminalSymbol() {
+		prefix = "n"
+	}
+
+	return SymbolID(fmt.Sprintf("%s%v", prefix, bareID)), bareID
+}
+
+type SymbolID string
+
+const (
+	symbolIDNil = SymbolID("")
+)
+
+func (id SymbolID) String() string {
+	return string(id)
+}
+
+func (id SymbolID) IsNil() bool {
+	return id == symbolIDNil
+}
+
+func (id SymbolID) Kind() SymbolKind {
+	if id.IsNil() {
+		return symbolKindNil
+	}
+
+	switch id[:1] {
+	case "t":
+		return symbolKindTerminal
+	case "n":
+		return symbolKindNonTerminal
+	}
+
+	return symbolKindNil
+}
+
 type Symbol struct {
-	id   SymbolID
-	kind SymbolKind
+	id     SymbolID
+	bareID bareSymbolID
+	kind   SymbolKind
 }
 
 type SymbolTable struct {
 	str2Sym map[string]*Symbol
-	id2Sym  map[SymbolID]*Symbol
-	id      SymbolID
+	id2Sym  map[bareSymbolID]*Symbol
+	idGen   *symbolIDGenerator
 }
 
 func NewSymbolTable() *SymbolTable {
 	return &SymbolTable{
 		str2Sym: map[string]*Symbol{},
-		id2Sym:  map[SymbolID]*Symbol{},
-		id:      NewSymbolID(),
+		id2Sym:  map[bareSymbolID]*Symbol{},
+		idGen:   newSymbolIDGenerator(),
 	}
 }
 
-func (st *SymbolTable) Intern(str string) SymbolID {
+func (st *SymbolTable) Intern(str string, kind SymbolKind) SymbolID {
+	if str == "" || kind.IsNil() {
+		return symbolIDNil
+	}
+
 	if sym, ok := st.str2Sym[str]; ok {
 		return sym.id
 	}
 
+	id, bareID := st.idGen.next(kind)
 	sym := &Symbol{
-		id:   st.id.Next(),
-		kind: symbolKindTerminal,
+		id:     id,
+		bareID: bareID,
+		kind:   kind,
 	}
 
 	st.str2Sym[str] = sym
-	st.id2Sym[sym.id] = sym
+	st.id2Sym[bareID] = sym
 
-	return sym.id
+	return id
 }
 
-func (st *SymbolTable) SymbolKind(id SymbolID) (SymbolKind, error) {
-	if sym, ok := st.id2Sym[id]; ok {
-		if sym.kind.IsNil() {
-			return symbolKindNil, fmt.Errorf("symbol kind is nil. symbol id: %s", id)
-		}
-
-		return sym.kind, nil
+func (st *SymbolTable) lookupByString(str string) SymbolID {
+	if str == "" {
+		return symbolIDNil
 	}
 
-	return symbolKindNil, fmt.Errorf("unknown symbol id")
-}
-
-func (st *SymbolTable) MarkAsNonTerminalSymbol(id SymbolID) error {
-	if id.IsNil() {
-		return fmt.Errorf("symbol id passed is nil")
+	if sym, ok := st.str2Sym[str]; ok {
+		return sym.id
 	}
 
-	sym, ok := st.id2Sym[id]
-	if !ok {
-		return fmt.Errorf("symbol id passed doesn't exist. symbol id: %s", id)
-	}
-
-	sym.kind = symbolKindNonTerminal
-
-	return nil
+	return symbolIDNil
 }
