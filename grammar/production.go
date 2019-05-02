@@ -4,6 +4,28 @@ import (
 	"fmt"
 )
 
+type Productions map[SymbolID][]*Production
+
+func NewProductions() Productions {
+	return map[SymbolID][]*Production{}
+}
+
+func (prods Productions) Append(prod *Production) {
+	if arr, ok := prods[prod.lhs]; ok {
+		prods[prod.lhs] = append(arr, prod)
+	} else {
+		prods[prod.lhs] = []*Production{prod}
+	}
+}
+
+func (prods Productions) Get(lhs SymbolID) []*Production {
+	if lhs.IsNil() {
+		return nil
+	}
+
+	return prods[lhs]
+}
+
 type ProductionFingerprint string
 
 func newProductionFingerprint(lhs SymbolID, rhs []SymbolID) ProductionFingerprint {
@@ -26,6 +48,7 @@ type Production struct {
 	fingerprint ProductionFingerprint
 	lhs         SymbolID
 	rhs         []SymbolID
+	rhsLen      int
 }
 
 func NewProduction(lhs SymbolID, rhs []SymbolID) (*Production, error) {
@@ -43,7 +66,12 @@ func NewProduction(lhs SymbolID, rhs []SymbolID) (*Production, error) {
 		fingerprint: newProductionFingerprint(lhs, rhs),
 		lhs:         lhs,
 		rhs:         rhs,
+		rhsLen:      len(rhs),
 	}, nil
+}
+
+func (prod *Production) isEmpty() bool {
+	return prod.rhsLen <= 0
 }
 
 func (prod *Production) String() string {
