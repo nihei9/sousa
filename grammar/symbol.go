@@ -34,6 +34,7 @@ type SymbolKind string
 
 const (
 	symbolKindNil         = SymbolKind("")
+	symbolKindStart       = SymbolKind("start")
 	symbolKindTerminal    = SymbolKind("terminal")
 	symbolKindNonTerminal = SymbolKind("non-terminal")
 )
@@ -51,7 +52,11 @@ func (sk SymbolKind) IsTerminalSymbol() bool {
 }
 
 func (sk SymbolKind) IsNonTerminalSymbol() bool {
-	return sk == symbolKindNonTerminal
+	return sk == symbolKindNonTerminal || sk == symbolKindStart
+}
+
+func (sk SymbolKind) IsStartSymbol() bool {
+	return sk == symbolKindStart
 }
 
 type symbolIDGenerator struct {
@@ -74,6 +79,8 @@ func (g *symbolIDGenerator) next(kind SymbolKind) (SymbolID, bareSymbolID) {
 	prefix := ""
 	if kind.IsTerminalSymbol() {
 		prefix = "t"
+	} else if kind.IsStartSymbol() {
+		prefix = "s"
 	} else if kind.IsNonTerminalSymbol() {
 		prefix = "n"
 	}
@@ -103,6 +110,8 @@ func (id SymbolID) Kind() SymbolKind {
 	switch id[:1] {
 	case "t":
 		return symbolKindTerminal
+	case "s":
+		return symbolKindStart
 	case "n":
 		return symbolKindNonTerminal
 	}
