@@ -1,7 +1,6 @@
 package grammar
 
 import (
-	"sort"
 	"testing"
 )
 
@@ -97,13 +96,4 @@ func testFirstSet(t *testing.T, actual, expected *FirstSet) {
 			t.Fatalf("invalid first set\nwant: %+v\ngot: %+v", expected.symbols, actual.symbols)
 		}
 	}
-}
-
-func sortSymbols(syms []SymbolID) []SymbolID {
-	dSyms := make([]SymbolID, len(syms))
-	copy(dSyms, syms)
-	sort.SliceStable(dSyms, func(i, j int) bool {
-		return dSyms[i] < dSyms[j]
-	})
-	return dSyms
 }

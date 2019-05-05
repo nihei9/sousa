@@ -1,5 +1,7 @@
 package grammar
 
+import "sort"
+
 type Prod struct {
 	lhs string
 	rhs []string
@@ -34,4 +36,13 @@ func newProds(st *SymbolTable, start string, prods []*Prod) Productions {
 	}
 
 	return ps
+}
+
+func sortSymbols(syms []SymbolID) []SymbolID {
+	dSyms := make([]SymbolID, len(syms))
+	copy(dSyms, syms)
+	sort.SliceStable(dSyms, func(i, j int) bool {
+		return dSyms[i] < dSyms[j]
+	})
+	return dSyms
 }
