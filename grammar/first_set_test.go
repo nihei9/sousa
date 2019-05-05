@@ -83,7 +83,7 @@ func testFirstSet(t *testing.T, actual, expected *FirstSet) {
 	t.Helper()
 
 	if actual.empty != expected.empty {
-		t.Errorf("empty is missmatched\nwant: %v\ngot: %v", expected.empty, actual.empty)
+		t.Errorf("empty is mismatched\nwant: %v\ngot: %v", expected.empty, actual.empty)
 	}
 
 	if len(actual.symbols) != len(expected.symbols) {
