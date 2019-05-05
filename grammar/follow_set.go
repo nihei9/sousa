@@ -121,7 +121,7 @@ func (cc *FollowSetComputationContext) isAlreadyStacked(sym SymbolID) bool {
 	return false
 }
 
-func GenerateFollowSet(prods Productions, first FirstSets) (FollowSets, error) {
+func GenerateFollowSets(prods Productions, first FirstSets) (FollowSets, error) {
 	cc := newFollowSetComputationContext(prods, first)
 
 	for _, ps := range prods {
