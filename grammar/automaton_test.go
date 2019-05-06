@@ -4,14 +4,6 @@ import (
 	"testing"
 )
 
-type lr0Item struct {
-	lhs       string
-	num       int
-	dot       int
-	initial   bool
-	reducible bool
-}
-
 func TestGenerateLR0Automaton(t *testing.T) {
 	st := NewSymbolTable()
 
@@ -340,31 +332,4 @@ func TestKernelItems(t *testing.T) {
 			t.Error("no error was returned")
 		}
 	})
-}
-
-func genKernel(items []lr0Item, st *SymbolTable, prods Productions) (*KernelItems, error) {
-	k := NewKernelItems()
-	for _, i := range items {
-		item, err := genLR0Item(i, st, prods)
-		if err != nil {
-			return nil, err
-		}
-
-		k.Append(item)
-	}
-
-	return k, nil
-}
-
-func genLR0Item(i lr0Item, st *SymbolTable, prods Productions) (*LR0Item, error) {
-	P := newProductionGetter(st, prods)
-
-	switch {
-	case i.initial:
-		return NewInitialLR0Item(P(i.lhs, i.num))
-	case i.reducible:
-		return NewReducibleLR0Item(P(i.lhs, i.num))
-	default:
-		return NewLR0Item(P(i.lhs, i.num), i.dot)
-	}
 }
