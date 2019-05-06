@@ -46,3 +46,16 @@ func sortSymbols(syms []SymbolID) []SymbolID {
 	})
 	return dSyms
 }
+
+func newSymbolGetter(st *SymbolTable) func(string) SymbolID {
+	return func(str string) SymbolID {
+		return st.lookupByString(str)
+	}
+}
+
+func newProductionGetter(st *SymbolTable, prods Productions) func(string, int) *Production {
+	return func(lhs string, num int) *Production {
+		id := st.Intern(lhs, symbolKindNonTerminal)
+		return prods.Get(id)[num]
+	}
+}
