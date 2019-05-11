@@ -12,6 +12,7 @@ func (t TokenType) String() string {
 
 const (
 	TokenTypeUnknown   = TokenType("UNKNOWN")
+	TokenTypeEOF       = TokenType("EOF")
 	TokenTypeColon     = TokenType(":")
 	TokenTypeVBar      = TokenType("|")
 	TokenTypeSemicolon = TokenType(";")
@@ -68,6 +69,22 @@ func (t *UnknownToken) Type() TokenType { return TokenTypeUnknown }
 func (t *UnknownToken) Pos() Position   { return t.pos }
 func (t *UnknownToken) Text() string    { return t.text }
 func (t *UnknownToken) IsUnknown() bool { return true }
+
+type EOFToken struct {
+	pos Position
+}
+
+func newEOFToken(pos Position) Token {
+	return &EOFToken{
+		pos: pos,
+	}
+}
+
+func (t *EOFToken) String() string  { return TokenTypeEOF.String() }
+func (t *EOFToken) Type() TokenType { return TokenTypeEOF }
+func (t *EOFToken) Pos() Position   { return t.pos }
+func (t *EOFToken) Text() string    { return TokenTypeEOF.String() }
+func (t *EOFToken) IsUnknown() bool { return false }
 
 type SymbolToken struct {
 	t   TokenType

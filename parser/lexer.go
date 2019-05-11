@@ -60,7 +60,7 @@ func (l *lexer) next() (Token, error) {
 		return nil, err
 	}
 	if eof {
-		return nil, nil
+		return newEOFToken(pos), nil
 	}
 
 	switch {
