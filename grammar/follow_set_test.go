@@ -45,7 +45,7 @@ func TestFollowSet(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		nSymID := st.Intern(tt.nSym, symbolKindNonTerminal)
+		nSymID := st.Intern(tt.nSym, SymbolKindNonTerminal)
 		if nSymID.IsNil() {
 			t.Errorf("failed to intern a symbol. test: %+v", tt)
 			continue
@@ -62,7 +62,7 @@ func TestFollowSet(t *testing.T) {
 			expectedFollow.putEOF()
 		}
 		for _, sym := range tt.symbols {
-			symID := st.Intern(sym, symbolKindTerminal)
+			symID := st.Intern(sym, SymbolKindTerminal)
 			if symID.IsNil() {
 				t.Errorf("failed to intern a symbol. test: %+v, symbol: %v", tt, sym)
 				continue

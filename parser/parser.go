@@ -26,11 +26,11 @@ func (s State) String() string {
 }
 
 const (
-	stateStart       = State("start")
-	stateProduction  = State("production")
-	stateLHS         = State("lhs")
-	stateRHS         = State("rhs")
-	stateAlternative = State("alternative")
+	StateStart       = State("start")
+	StateProduction  = State("production")
+	StateLHS         = State("lhs")
+	StateRHS         = State("rhs")
+	StateAlternative = State("alternative")
 )
 
 type AST struct {
@@ -92,7 +92,7 @@ func (p *parser) Parse() (ast *AST, err error) {
 }
 
 func (p *parser) start() {
-	p.entry(stateStart)
+	p.entry(StateStart)
 
 	for {
 		if p.isNext(TokenTypeEOF) {
@@ -105,7 +105,7 @@ func (p *parser) start() {
 }
 
 func (p *parser) production() {
-	p.entry(stateProduction)
+	p.entry(StateProduction)
 
 	p.lhs()
 	p.match(TokenTypeColon)
@@ -116,7 +116,7 @@ func (p *parser) production() {
 }
 
 func (p *parser) lhs() {
-	p.entry(stateLHS)
+	p.entry(StateLHS)
 
 	p.matchAndPush(TokenTypeID)
 
@@ -124,7 +124,7 @@ func (p *parser) lhs() {
 }
 
 func (p *parser) rhs() {
-	p.entry(stateRHS)
+	p.entry(StateRHS)
 
 	for {
 		p.alternative()
@@ -138,7 +138,7 @@ func (p *parser) rhs() {
 }
 
 func (p *parser) alternative() {
-	p.entry(stateAlternative)
+	p.entry(StateAlternative)
 
 	for {
 		if !p.isNext(TokenTypeID, TokenTypeString) {

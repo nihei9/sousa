@@ -45,7 +45,7 @@ func TestGenerateFirstSets(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		lhsID := st.Intern(tt.lhs, symbolKindNonTerminal)
+		lhsID := st.Intern(tt.lhs, SymbolKindNonTerminal)
 		if lhsID.IsNil() {
 			t.Errorf("failed to intern a symbol. test: %+v", tt)
 			continue
@@ -65,7 +65,7 @@ func TestGenerateFirstSets(t *testing.T) {
 
 		expectedFirst := newFirstSet()
 		for _, sym := range tt.symbols {
-			symID := st.Intern(sym, symbolKindTerminal)
+			symID := st.Intern(sym, SymbolKindTerminal)
 			if symID.IsNil() {
 				t.Errorf("failed to intern a symbol. test: %+v, symbol: %v", tt, sym)
 				continue

@@ -33,10 +33,10 @@ func (id *bareSymbolID) next() bareSymbolID {
 type SymbolKind string
 
 const (
-	symbolKindNil         = SymbolKind("")
-	symbolKindStart       = SymbolKind("start")
-	symbolKindTerminal    = SymbolKind("terminal")
-	symbolKindNonTerminal = SymbolKind("non-terminal")
+	SymbolKindNil         = SymbolKind("")
+	SymbolKindStart       = SymbolKind("start")
+	SymbolKindTerminal    = SymbolKind("terminal")
+	SymbolKindNonTerminal = SymbolKind("non-terminal")
 )
 
 func (sk SymbolKind) String() string {
@@ -44,19 +44,19 @@ func (sk SymbolKind) String() string {
 }
 
 func (sk SymbolKind) IsNil() bool {
-	return sk == symbolKindNil
+	return sk == SymbolKindNil
 }
 
 func (sk SymbolKind) IsTerminalSymbol() bool {
-	return sk == symbolKindTerminal
+	return sk == SymbolKindTerminal
 }
 
 func (sk SymbolKind) IsNonTerminalSymbol() bool {
-	return sk == symbolKindNonTerminal || sk == symbolKindStart
+	return sk == SymbolKindNonTerminal || sk == SymbolKindStart
 }
 
 func (sk SymbolKind) IsStartSymbol() bool {
-	return sk == symbolKindStart
+	return sk == SymbolKindStart
 }
 
 type symbolIDGenerator struct {
@@ -104,19 +104,19 @@ func (id SymbolID) IsNil() bool {
 
 func (id SymbolID) Kind() SymbolKind {
 	if id.IsNil() {
-		return symbolKindNil
+		return SymbolKindNil
 	}
 
 	switch id[:1] {
 	case "t":
-		return symbolKindTerminal
+		return SymbolKindTerminal
 	case "s":
-		return symbolKindStart
+		return SymbolKindStart
 	case "n":
-		return symbolKindNonTerminal
+		return SymbolKindNonTerminal
 	}
 
-	return symbolKindNil
+	return SymbolKindNil
 }
 
 type Symbol struct {

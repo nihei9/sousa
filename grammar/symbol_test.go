@@ -19,27 +19,27 @@ func TestSymbolTable(t *testing.T) {
 	}
 
 	t.Run("Intern valid symbols as a terminal symbol", func(t *testing.T) {
-		testValidSymbols(t, validSymbols, symbolKindTerminal)
+		testValidSymbols(t, validSymbols, SymbolKindTerminal)
 	})
 
 	t.Run("Intern valid symbols as a non-terminal symbol", func(t *testing.T) {
-		testValidSymbols(t, validSymbols, symbolKindNonTerminal)
+		testValidSymbols(t, validSymbols, SymbolKindNonTerminal)
 	})
 
 	t.Run("Intern valid symbols as a start symbol", func(t *testing.T) {
-		testValidSymbols(t, validSymbols, symbolKindStart)
+		testValidSymbols(t, validSymbols, SymbolKindStart)
 	})
 
 	t.Run("Intern invalid symbols as a terminal symbol", func(t *testing.T) {
-		testInvalidSymbols(t, invalidSymbols, symbolKindTerminal)
+		testInvalidSymbols(t, invalidSymbols, SymbolKindTerminal)
 	})
 
 	t.Run("Intern invalid symbols as a non-terminal symbol", func(t *testing.T) {
-		testInvalidSymbols(t, invalidSymbols, symbolKindNonTerminal)
+		testInvalidSymbols(t, invalidSymbols, SymbolKindNonTerminal)
 	})
 
 	t.Run("Intern invalid symbols as a start symbol", func(t *testing.T) {
-		testInvalidSymbols(t, invalidSymbols, symbolKindStart)
+		testInvalidSymbols(t, invalidSymbols, SymbolKindStart)
 	})
 }
 
