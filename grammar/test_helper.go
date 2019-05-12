@@ -17,17 +17,17 @@ func newProd(lhs string, rhs ...string) *Prod {
 func newProds(st *SymbolTable, start string, prods []*Prod) Productions {
 	ps := NewProductions()
 
-	st.Intern(start, symbolKindStart)
+	st.Intern(start, SymbolKindStart)
 
 	for _, prod := range prods {
-		st.Intern(prod.lhs, symbolKindNonTerminal)
+		st.Intern(prod.lhs, SymbolKindNonTerminal)
 	}
 
 	for _, prod := range prods {
-		lhs := st.Intern(prod.lhs, symbolKindNonTerminal)
+		lhs := st.Intern(prod.lhs, SymbolKindNonTerminal)
 		rhs := make([]SymbolID, len(prod.rhs))
 		for i, sym := range prod.rhs {
-			rhs[i] = st.Intern(sym, symbolKindTerminal)
+			rhs[i] = st.Intern(sym, SymbolKindTerminal)
 		}
 
 		p, _ := NewProduction(lhs, rhs)
@@ -55,7 +55,7 @@ func newSymbolGetter(st *SymbolTable) func(string) SymbolID {
 
 func newProductionGetter(st *SymbolTable, prods Productions) func(string, int) *Production {
 	return func(lhs string, num int) *Production {
-		id := st.Intern(lhs, symbolKindNonTerminal)
+		id := st.Intern(lhs, SymbolKindNonTerminal)
 		return prods.Get(id)[num]
 	}
 }
