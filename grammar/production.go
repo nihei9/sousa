@@ -70,6 +70,10 @@ func NewProduction(lhs SymbolID, rhs []SymbolID) (*Production, error) {
 	}, nil
 }
 
+func (prod *Production) Equal(target *Production) bool {
+	return prod.fingerprint == target.fingerprint
+}
+
 func (prod *Production) isEmpty() bool {
 	return prod.rhsLen <= 0
 }
