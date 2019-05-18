@@ -1,17 +1,51 @@
 package ast2grammar
 
 import (
+	"fmt"
+
 	"github.com/nihei9/sousa/grammar"
 	"github.com/nihei9/sousa/parser"
 )
 
-func Convert(root *parser.AST) (*grammar.SymbolTable, grammar.Productions, error) {
+type Grammar struct {
+	SymbolTable          *grammar.SymbolTable
+	Productions          grammar.Productions
+	AugmentedStartSymbol grammar.SymbolID
+}
+
+func Convert(root *parser.AST) (*Grammar, error) {
 	st := grammar.NewSymbolTable()
 	prods := grammar.NewProductions()
+	g := &Grammar{
+		SymbolTable: st,
+		Productions: prods,
+	}
 
+	isFirst := true
 	for _, prodAST := range root.Children {
 		if prodAST.State != parser.StateProduction {
 			continue
+		}
+
+		if isFirst {
+			isFirst = false
+
+			lhsAST := prodAST.Children[0]
+			augmentedStartSymbol := fmt.Sprintf("%s'", lhsAST.Tokens[0].Text())
+			lhsID := st.Intern(augmentedStartSymbol, grammar.SymbolKindStart)
+
+			startSymbol := lhsAST.Tokens[0].Text()
+			startSymbolID := st.Intern(startSymbol, grammar.SymbolKindNonTerminal)
+			rhsIDs := []grammar.SymbolID{startSymbolID}
+
+			prod, err := grammar.NewProduction(lhsID, rhsIDs)
+			if err != nil {
+				return nil, err
+			}
+
+			prods.Append(prod)
+
+			g.AugmentedStartSymbol = lhsID
 		}
 
 		lhsAST := prodAST.Children[0]
@@ -35,12 +69,12 @@ func Convert(root *parser.AST) (*grammar.SymbolTable, grammar.Productions, error
 
 			prod, err := grammar.NewProduction(lhsID, rhsIDs)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 
 			prods.Append(prod)
 		}
 	}
 
-	return st, prods, nil
+	return g, nil
 }
