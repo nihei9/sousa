@@ -29,7 +29,7 @@ type LR0Item struct {
 	// 2   | E -> E +・T
 	dot int
 
-	// If initial is true, it means lhs of the production is the expansion start symbol and dot is 0.
+	// If initial is true, it means lhs of the production is the augmented start symbol and dot is 0.
 	// It looks like S' ->・S.
 	initial bool
 
@@ -270,11 +270,11 @@ type LR0Automaton struct {
 	states map[KernelFingerprint]*LR0ItemSet
 }
 
-func GenerateLR0Automaton(st *SymbolTable, prods Productions, expansionStartSymbol SymbolID) (*LR0Automaton, error) {
+func GenerateLR0Automaton(st *SymbolTable, prods Productions, augmentedStartSymbol SymbolID) (*LR0Automaton, error) {
 	if st == nil {
 		return nil, fmt.Errorf("symbol table passed is nil")
 	}
-	if expansionStartSymbol.IsNil() || !expansionStartSymbol.Kind().IsStartSymbol() {
+	if augmentedStartSymbol.IsNil() || !augmentedStartSymbol.Kind().IsStartSymbol() {
 		return nil, fmt.Errorf("symbold passed is nil or not start symbol")
 	}
 
@@ -285,7 +285,7 @@ func GenerateLR0Automaton(st *SymbolTable, prods Productions, expansionStartSymb
 	// append the initial item to automaton.states
 	{
 		i0Kernel := NewKernelItems()
-		initialItem, err := NewInitialLR0Item(prods.Get(expansionStartSymbol)[0])
+		initialItem, err := NewInitialLR0Item(prods.Get(augmentedStartSymbol)[0])
 		if err != nil {
 			return nil, err
 		}
