@@ -33,6 +33,7 @@ func TestConvert(t *testing.T) {
 		{
 			src: `E: E "+" T | T; T: T "*" F | F; F: "(" E ")" | id;`,
 			productions: []production{
+				{lhs: "E'", rhs: alternative{"E"}},
 				{lhs: "E", rhs: alternative{"E", "+", "T"}},
 				{lhs: "E", rhs: alternative{"T"}},
 				{lhs: "T", rhs: alternative{"T", "*", "F"}},
@@ -56,24 +57,37 @@ func TestConvert(t *testing.T) {
 
 		root, err := parser.Parse()
 
-		st, prods, err := Convert(root)
+		g, err := Convert(root)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-		if prods == nil {
-			t.Error("productions is nil")
+		if g == nil {
+			t.Error("grammar is nil")
+			continue
+		}
+		if g.SymbolTable == nil {
+			t.Error("SymbolTable is nil")
+			continue
+		}
+		if g.Productions == nil {
+			t.Error("production is nil")
+			continue
+		}
+		if g.AugmentedStartSymbol.IsNil() {
+			t.Error("augmented symbol is nil")
 			continue
 		}
 
 		for _, ttProd := range tt.productions {
-			expectedProd, err := ttProd.genProduction(st)
+			expectedProd, err := ttProd.genProduction(g.SymbolTable)
 			if err != nil {
 				t.Error(err)
 				continue
 			}
 
-			actualProds := prods.Get(st.Intern(ttProd.lhs, grammar.SymbolKindNonTerminal))
+			lhsID := g.SymbolTable.Intern(ttProd.lhs, grammar.SymbolKindNonTerminal)
+			actualProds := g.Productions.Get(lhsID)
 			if actualProds == nil {
 				t.Errorf("failed to get %s-production", ttProd.lhs)
 				continue
