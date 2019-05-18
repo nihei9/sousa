@@ -199,11 +199,11 @@ func first(prod *Production, head int, cc *FirstSetComputationContext) (*FirstSe
 	{
 		if prod.isEmpty() {
 			if head != 0 {
-				return nil, fmt.Errorf("a production passed is the empty rule but head is 0")
+				return nil, fmt.Errorf("a production passed is the empty rule but head is not 0. got: %v", head)
 			}
 		} else {
 			if head < 0 || head >= prod.rhsLen {
-				return nil, fmt.Errorf("head is out of bounds. head must be between 0 and %v", prod.rhsLen-1)
+				return nil, fmt.Errorf("head is out of bounds. head must be between 0 and %v. got: %v", prod.rhsLen-1, head)
 			}
 		}
 	}
@@ -267,11 +267,15 @@ func first(prod *Production, head int, cc *FirstSetComputationContext) (*FirstSe
 		fs.merge(symFs)
 
 		if symFs.empty {
-			f, err := first(prod, head+1, cc)
-			if err != nil {
-				return nil, err
+			if symProd.isEmpty() {
+				fs.putEmpty()
+			} else {
+				f, err := first(symProd, head+1, cc)
+				if err != nil {
+					return nil, err
+				}
+				fs.merge(f)
 			}
-			fs.merge(f)
 		}
 	}
 	cc.first.put(fs, prod, head)
