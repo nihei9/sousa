@@ -2,28 +2,77 @@ package grammar
 
 import (
 	"fmt"
+	"strconv"
 )
 
-type Productions map[SymbolID][]*Production
+type ProductionID int
 
-func NewProductions() Productions {
-	return map[SymbolID][]*Production{}
+func (id ProductionID) String() string {
+	return strconv.Itoa(int(id))
 }
 
-func (prods Productions) Append(prod *Production) {
-	if arr, ok := prods[prod.lhs]; ok {
-		prods[prod.lhs] = append(arr, prod)
-	} else {
-		prods[prod.lhs] = []*Production{prod}
+type productionIDGenerator struct {
+	id ProductionID
+}
+
+func newProductionIDGenerator() *productionIDGenerator {
+	return &productionIDGenerator{
+		id: ProductionID(0),
 	}
 }
 
-func (prods Productions) Get(lhs SymbolID) []*Production {
+func (gen *productionIDGenerator) next() ProductionID {
+	id := gen.id
+	gen.id = ProductionID(int(gen.id) + 1)
+	return id
+}
+
+type Productions interface {
+	Append(*Production)
+	Get(SymbolID) []*Production
+	LookupByFingerprint(ProductionFingerprint) *Production
+	All() map[SymbolID][]*Production
+}
+
+// production is an inplementation of the Productions interface.
+type productions struct {
+	prods   map[SymbolID][]*Production
+	fp2prod map[ProductionFingerprint]*Production
+	idGen   *productionIDGenerator
+}
+
+func NewProductions() Productions {
+	return &productions{
+		prods:   map[SymbolID][]*Production{},
+		fp2prod: map[ProductionFingerprint]*Production{},
+		idGen:   newProductionIDGenerator(),
+	}
+}
+
+func (prods *productions) Append(prod *Production) {
+	prod.id = prods.idGen.next()
+	if arr, ok := prods.prods[prod.lhs]; ok {
+		prods.prods[prod.lhs] = append(arr, prod)
+	} else {
+		prods.prods[prod.lhs] = []*Production{prod}
+	}
+	prods.fp2prod[prod.fingerprint] = prod
+}
+
+func (prods *productions) Get(lhs SymbolID) []*Production {
 	if lhs.IsNil() {
 		return nil
 	}
 
-	return prods[lhs]
+	return prods.prods[lhs]
+}
+
+func (prods *productions) LookupByFingerprint(fp ProductionFingerprint) *Production {
+	return prods.fp2prod[fp]
+}
+
+func (prods *productions) All() map[SymbolID][]*Production {
+	return prods.prods
 }
 
 type ProductionFingerprint string
@@ -44,7 +93,12 @@ func (fp ProductionFingerprint) String() string {
 	return string(fp)
 }
 
+func (fp ProductionFingerprint) IsNil() bool {
+	return string(fp) == ""
+}
+
 type Production struct {
+	id          ProductionID
 	fingerprint ProductionFingerprint
 	lhs         SymbolID
 	rhs         []SymbolID
@@ -68,6 +122,14 @@ func NewProduction(lhs SymbolID, rhs []SymbolID) (*Production, error) {
 		rhs:         rhs,
 		rhsLen:      len(rhs),
 	}, nil
+}
+
+func (prod *Production) ID() ProductionID {
+	return prod.id
+}
+
+func (prod *Production) RHS() ([]SymbolID, int) {
+	return prod.rhs, prod.rhsLen
 }
 
 func (prod *Production) Equal(target *Production) bool {

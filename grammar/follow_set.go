@@ -124,7 +124,7 @@ func (cc *FollowSetComputationContext) isAlreadyStacked(sym SymbolID) bool {
 func GenerateFollowSets(prods Productions, first FirstSets) (FollowSets, error) {
 	cc := newFollowSetComputationContext(prods, first)
 
-	for _, ps := range prods {
+	for _, ps := range prods.All() {
 		for _, p := range ps {
 			_, err := follow(p.lhs, cc)
 			if err != nil {
@@ -165,7 +165,7 @@ func follow(sym SymbolID, cc *FollowSetComputationContext) (*FollowSet, error) {
 		fs.putEOF()
 	}
 
-	for _, ps := range cc.prods {
+	for _, ps := range cc.prods.All() {
 		for _, p := range ps {
 			for i, rhsSym := range p.rhs {
 				if rhsSym == sym {

@@ -28,22 +28,71 @@ type Action struct {
 	prod      ProductionFingerprint
 }
 
+func (a *Action) Type() ActionType {
+	return a.t
+}
+
+func (a *Action) NextState() KernelFingerprint {
+	return a.nextState
+}
+
+func (a *Action) Production() ProductionFingerprint {
+	return a.prod
+}
+
 type Actions struct {
 	actions     map[SymbolID]*Action
 	acceptable  bool
 	reduceByEOF ProductionFingerprint
 }
 
-type ParsingTable struct {
-	action map[KernelFingerprint]*Actions
-	goTo   map[KernelFingerprint]map[SymbolID]KernelFingerprint
+func (as *Actions) Actions() map[SymbolID]*Action {
+	return as.actions
 }
 
-func newParsingTable() *ParsingTable {
-	return &ParsingTable{
-		action: map[KernelFingerprint]*Actions{},
-		goTo:   map[KernelFingerprint]map[SymbolID]KernelFingerprint{},
+func (as *Actions) Acceptable() bool {
+	return as.acceptable
+}
+
+func (as *Actions) ReduceByEOF() (ProductionFingerprint, bool) {
+	return as.reduceByEOF, !as.reduceByEOF.IsNil()
+}
+
+type ParsingTable struct {
+	states       map[KernelFingerprint]StateID
+	initialState KernelFingerprint
+	action       map[KernelFingerprint]*Actions
+	goTo         map[KernelFingerprint]map[SymbolID]KernelFingerprint
+}
+
+func newParsingTable(automaton *LR0Automaton) *ParsingTable {
+	states := map[KernelFingerprint]StateID{}
+	for kernelFp, state := range automaton.states {
+		states[kernelFp] = state.ID
 	}
+
+	return &ParsingTable{
+		states:       states,
+		initialState: automaton.initialState,
+		action:       map[KernelFingerprint]*Actions{},
+		goTo:         map[KernelFingerprint]map[SymbolID]KernelFingerprint{},
+	}
+}
+
+func (pt *ParsingTable) States() map[KernelFingerprint]StateID {
+	return pt.states
+}
+
+func (pt *ParsingTable) InitialState() KernelFingerprint {
+	return pt.initialState
+}
+
+func (pt *ParsingTable) Action() map[KernelFingerprint]*Actions {
+	return pt.action
+}
+
+func (pt *ParsingTable) GoTo() map[KernelFingerprint]map[SymbolID]KernelFingerprint {
+	return pt.goTo
 }
 
 func (pt *ParsingTable) appendShiftAction(state KernelFingerprint, sym SymbolID, nextState KernelFingerprint) error {
@@ -120,7 +169,7 @@ func GenerateSLRParsingTable(automaton *LR0Automaton, follow FollowSets) (*Parsi
 		return nil, fmt.Errorf("parameters passed contains nil")
 	}
 
-	pt := newParsingTable()
+	pt := newParsingTable(automaton)
 
 	for _, state := range automaton.states {
 		for _, item := range state.Items {
