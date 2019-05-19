@@ -3,6 +3,7 @@ package grammar
 import (
 	"fmt"
 	"sort"
+	"strconv"
 )
 
 type LR0ItemFingerprint string
@@ -194,7 +195,30 @@ func (k *KernelItems) Fingerprint() KernelFingerprint {
 	return KernelFingerprint(fp)
 }
 
+type StateID int
+
+func (id StateID) String() string {
+	return strconv.Itoa(int(id))
+}
+
+type stateIDGenerator struct {
+	id StateID
+}
+
+func newStateIDGenerator() *stateIDGenerator {
+	return &stateIDGenerator{
+		id: StateID(0),
+	}
+}
+
+func (gen *stateIDGenerator) next() StateID {
+	id := gen.id
+	gen.id = StateID(int(gen.id) + 1)
+	return id
+}
+
 type LR0ItemSet struct {
+	ID          StateID
 	Fingerprint KernelFingerprint
 	Items       map[LR0ItemFingerprint]*LR0Item
 	GoTo        map[SymbolID]KernelFingerprint
@@ -267,7 +291,8 @@ func (is *LR0ItemSet) ComputeClosure(st *SymbolTable, prods Productions) error {
 }
 
 type LR0Automaton struct {
-	states map[KernelFingerprint]*LR0ItemSet
+	initialState KernelFingerprint
+	states       map[KernelFingerprint]*LR0ItemSet
 }
 
 func GenerateLR0Automaton(st *SymbolTable, prods Productions, augmentedStartSymbol SymbolID) (*LR0Automaton, error) {
@@ -281,6 +306,7 @@ func GenerateLR0Automaton(st *SymbolTable, prods Productions, augmentedStartSymb
 	automaton := &LR0Automaton{
 		states: map[KernelFingerprint]*LR0ItemSet{},
 	}
+	idGen := newStateIDGenerator()
 
 	// append the initial item to automaton.states
 	{
@@ -298,7 +324,9 @@ func GenerateLR0Automaton(st *SymbolTable, prods Productions, augmentedStartSymb
 		if err != nil {
 			return nil, err
 		}
+		i0.ID = idGen.next()
 
+		automaton.initialState = i0Kernel.Fingerprint()
 		automaton.states[i0.Fingerprint] = i0
 	}
 
@@ -341,6 +369,7 @@ func GenerateLR0Automaton(st *SymbolTable, prods Productions, augmentedStartSymb
 				}
 
 				if _, exist := automaton.states[is.Fingerprint]; !exist {
+					is.ID = idGen.next()
 					automaton.states[is.Fingerprint] = is
 					nextUncheckedStates[is.Fingerprint] = is
 				}

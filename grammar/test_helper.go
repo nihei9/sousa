@@ -68,6 +68,20 @@ type lr0Item struct {
 	reducible bool
 }
 
+func genInitialKernel(augmentedStart SymbolID, st *SymbolTable, prods Productions) (*KernelItems, error) {
+	k := NewKernelItems()
+	item, err := NewInitialLR0Item(prods.Get(augmentedStart)[0])
+	if err != nil {
+		return nil, err
+	}
+	err = k.Append(item)
+	if err != nil {
+		return nil, err
+	}
+
+	return k, nil
+}
+
 func genKernel(items []lr0Item, st *SymbolTable, prods Productions) (*KernelItems, error) {
 	k := NewKernelItems()
 	for _, i := range items {
@@ -76,7 +90,10 @@ func genKernel(items []lr0Item, st *SymbolTable, prods Productions) (*KernelItem
 			return nil, err
 		}
 
-		k.Append(item)
+		err = k.Append(item)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return k, nil

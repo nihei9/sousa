@@ -63,6 +63,14 @@ func TestParsingTable(t *testing.T) {
 		t.Fatal("GenerateSLRParsingTable() returned nil without an error")
 	}
 
+	k, err := genInitialKernel(V("E'"), st, prods)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slrPT.InitialState() != k.Fingerprint() {
+		t.Fatalf("unexpected initial state\nwant: %v\ngot: %v", k.Fingerprint(), slrPT.InitialState())
+	}
+
 	tests := map[int]struct {
 		kernels            []lr0Item
 		action             map[string]Act
@@ -290,11 +298,25 @@ func TestParsingTable(t *testing.T) {
 
 		if tt.reducibleByEOF {
 			eProd := tt.reduceByEOFActtion.prod
-			aProd := actualActions.reduceByEOF
+			aProd, reducible := actualActions.ReduceByEOF()
+			if !reducible {
+				t.Errorf("production is mismatched\nwant: true\ngot: %v\ntest: %+v", reducible, tt)
+				continue
+			}
 			if aProd != eProd {
 				t.Errorf("production is mismatched\nwant: %v\ngot: %v\ntest: %+v", eProd, aProd, tt)
+				continue
 			}
-			continue
+		} else {
+			prod, reducible := actualActions.ReduceByEOF()
+			if reducible {
+				t.Errorf("production is mismatched\nwant: false\ngot: %v\ntest: %+v", reducible, tt)
+				continue
+			}
+			if !prod.IsNil() {
+				t.Errorf("production is mismatched\nwant: nil\ngot: %v\ntest: %+v", prod, tt)
+				continue
+			}
 		}
 
 		if len(tt.goTo) > 0 {

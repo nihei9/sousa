@@ -24,6 +24,17 @@ func TestGenerateLR0Automaton(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	{
+		k, err := genInitialKernel(V("E'"), st, prods)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if automaton.initialState != k.Fingerprint() {
+			t.Fatalf("unexpected initial state\nwant: %v\ngot: %v", k.Fingerprint(), automaton.initialState)
+		}
+	}
+
 	tests := map[int]struct {
 		kernels    []lr0Item
 		others     []lr0Item

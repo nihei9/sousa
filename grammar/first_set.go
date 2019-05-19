@@ -76,7 +76,7 @@ type FirstSets map[ProductionFingerprint][]*FirstSet
 func newFirstSets(prods Productions) FirstSets {
 	fss := FirstSets{}
 
-	for _, ps := range prods {
+	for _, ps := range prods.All() {
 		for _, p := range ps {
 			len := p.rhsLen
 			if p.isEmpty() {
@@ -170,7 +170,7 @@ func (cc *FirstSetComputationContext) isAlreadyStacked(prod *Production, head in
 func GenerateFirstSets(prods Productions) (FirstSets, error) {
 	cc := newFirstSetComputationContext(prods)
 
-	for _, ps := range prods {
+	for _, ps := range prods.All() {
 		for _, p := range ps {
 			if p.isEmpty() {
 				_, err := first(p, 0, cc)
