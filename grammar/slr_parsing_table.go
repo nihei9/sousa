@@ -46,20 +46,20 @@ func newParsingTable() *ParsingTable {
 	}
 }
 
-func (pt *ParsingTable) appendShiftAction(state KernelFingerprint, sym SymbolID, nextState KernelFingerprint) {
+func (pt *ParsingTable) appendShiftAction(state KernelFingerprint, sym SymbolID, nextState KernelFingerprint) error {
 	a := &Action{
 		t:         ActionTypeShift,
 		nextState: nextState,
 	}
-	pt.appendAction(a, state, sym)
+	return pt.appendAction(a, state, sym)
 }
 
-func (pt *ParsingTable) appendReduceAction(state KernelFingerprint, sym SymbolID, prod ProductionFingerprint) {
+func (pt *ParsingTable) appendReduceAction(state KernelFingerprint, sym SymbolID, prod ProductionFingerprint) error {
 	a := &Action{
 		t:    ActionTypeReduce,
 		prod: prod,
 	}
-	pt.appendAction(a, state, sym)
+	return pt.appendAction(a, state, sym)
 }
 
 func (pt *ParsingTable) appendReduceActionByEOF(state KernelFingerprint, prod ProductionFingerprint) {
@@ -84,7 +84,11 @@ func (pt *ParsingTable) appendAcceptAction(state KernelFingerprint) {
 	pt.action[state].acceptable = true
 }
 
-func (pt *ParsingTable) appendAction(a *Action, state KernelFingerprint, sym SymbolID) {
+func (pt *ParsingTable) appendAction(a *Action, state KernelFingerprint, sym SymbolID) error {
+	if !sym.Kind().IsTerminalSymbol() {
+		return fmt.Errorf("a non-terminal symbol cannot append to ACTION. state: %v, symbol: %v", state, sym)
+	}
+
 	if _, ok := pt.action[state]; !ok {
 		pt.action[state] = &Actions{
 			actions:    map[SymbolID]*Action{},
@@ -93,14 +97,22 @@ func (pt *ParsingTable) appendAction(a *Action, state KernelFingerprint, sym Sym
 	}
 
 	pt.action[state].actions[sym] = a
+
+	return nil
 }
 
-func (pt *ParsingTable) appendGoTo(state KernelFingerprint, sym SymbolID, nextState KernelFingerprint) {
+func (pt *ParsingTable) appendGoTo(state KernelFingerprint, sym SymbolID, nextState KernelFingerprint) error {
+	if !sym.Kind().IsNonTerminalSymbol() {
+		return fmt.Errorf("a terminal symbol cannot append to GOTO. state: %v, symbol: %v, next state: %v", state, sym, nextState)
+	}
+
 	if _, ok := pt.goTo[state]; !ok {
 		pt.goTo[state] = map[SymbolID]KernelFingerprint{}
 	}
 
 	pt.goTo[state][sym] = nextState
+
+	return nil
 }
 
 func GenerateSLRParsingTable(automaton *LR0Automaton, follow FollowSets) (*ParsingTable, error) {
@@ -118,7 +130,10 @@ func GenerateSLRParsingTable(automaton *LR0Automaton, follow FollowSets) (*Parsi
 				} else {
 					syms := follow.Get(item.prod.lhs)
 					for sym, _ := range syms.symbols {
-						pt.appendReduceAction(state.Fingerprint, sym, item.prod.fingerprint)
+						err := pt.appendReduceAction(state.Fingerprint, sym, item.prod.fingerprint)
+						if err != nil {
+							return nil, err
+						}
 					}
 					if syms.eof {
 						pt.appendReduceActionByEOF(state.Fingerprint, item.prod.fingerprint)
@@ -134,12 +149,20 @@ func GenerateSLRParsingTable(automaton *LR0Automaton, follow FollowSets) (*Parsi
 				if !ok {
 					return nil, fmt.Errorf("next status not found")
 				}
-				pt.appendShiftAction(state.Fingerprint, sym, nextState)
+				err := pt.appendShiftAction(state.Fingerprint, sym, nextState)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
 		for sym, nextState := range state.GoTo {
-			pt.appendGoTo(state.Fingerprint, sym, nextState)
+			if sym.Kind().IsNonTerminalSymbol() {
+				err := pt.appendGoTo(state.Fingerprint, sym, nextState)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 

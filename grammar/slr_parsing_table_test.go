@@ -69,6 +69,7 @@ func TestParsingTable(t *testing.T) {
 		reducibleByEOF     bool
 		reduceByEOFActtion Act
 		acceptable         bool
+		goTo               map[string]int
 	}{
 		0: {
 			kernels: []lr0Item{
@@ -77,6 +78,11 @@ func TestParsingTable(t *testing.T) {
 			action: map[string]Act{
 				"id": shift(5),
 				"(":  shift(4),
+			},
+			goTo: map[string]int{
+				"E": 1,
+				"T": 2,
+				"F": 3,
 			},
 		},
 		1: {
@@ -88,6 +94,7 @@ func TestParsingTable(t *testing.T) {
 				"+": shift(6),
 			},
 			acceptable: true,
+			goTo:       map[string]int{},
 		},
 		2: {
 			kernels: []lr0Item{
@@ -101,6 +108,7 @@ func TestParsingTable(t *testing.T) {
 			},
 			reducibleByEOF:     true,
 			reduceByEOFActtion: reduce(P("E", 1)),
+			goTo:               map[string]int{},
 		},
 		3: {
 			kernels: []lr0Item{
@@ -113,6 +121,7 @@ func TestParsingTable(t *testing.T) {
 			},
 			reducibleByEOF:     true,
 			reduceByEOFActtion: reduce(P("T", 1)),
+			goTo:               map[string]int{},
 		},
 		4: {
 			kernels: []lr0Item{
@@ -121,6 +130,11 @@ func TestParsingTable(t *testing.T) {
 			action: map[string]Act{
 				"id": shift(5),
 				"(":  shift(4),
+			},
+			goTo: map[string]int{
+				"E": 8,
+				"T": 2,
+				"F": 3,
 			},
 		},
 		5: {
@@ -134,6 +148,7 @@ func TestParsingTable(t *testing.T) {
 			},
 			reducibleByEOF:     true,
 			reduceByEOFActtion: reduce(P("F", 1)),
+			goTo:               map[string]int{},
 		},
 		6: {
 			kernels: []lr0Item{
@@ -143,6 +158,10 @@ func TestParsingTable(t *testing.T) {
 				"id": shift(5),
 				"(":  shift(4),
 			},
+			goTo: map[string]int{
+				"T": 9,
+				"F": 3,
+			},
 		},
 		7: {
 			kernels: []lr0Item{
@@ -151,6 +170,9 @@ func TestParsingTable(t *testing.T) {
 			action: map[string]Act{
 				"id": shift(5),
 				"(":  shift(4),
+			},
+			goTo: map[string]int{
+				"F": 10,
 			},
 		},
 		8: {
@@ -162,6 +184,7 @@ func TestParsingTable(t *testing.T) {
 				"+": shift(6),
 				")": shift(11),
 			},
+			goTo: map[string]int{},
 		},
 		9: {
 			kernels: []lr0Item{
@@ -175,6 +198,7 @@ func TestParsingTable(t *testing.T) {
 			},
 			reducibleByEOF:     true,
 			reduceByEOFActtion: reduce(P("E", 0)),
+			goTo:               map[string]int{},
 		},
 		10: {
 			kernels: []lr0Item{
@@ -187,6 +211,7 @@ func TestParsingTable(t *testing.T) {
 			},
 			reducibleByEOF:     true,
 			reduceByEOFActtion: reduce(P("T", 0)),
+			goTo:               map[string]int{},
 		},
 		11: {
 			kernels: []lr0Item{
@@ -199,6 +224,7 @@ func TestParsingTable(t *testing.T) {
 			},
 			reducibleByEOF:     true,
 			reduceByEOFActtion: reduce(P("F", 0)),
+			goTo:               map[string]int{},
 		},
 	}
 
@@ -246,13 +272,20 @@ func TestParsingTable(t *testing.T) {
 
 				if a.nextState != k.Fingerprint() {
 					t.Errorf("invalid next state\nwant: %v\ngot: %v\ntest: %+v", act.nextState, a.nextState, tt)
+					continue
 				}
 			} else if act.t == ActionTypeReduce {
 
 				if a.prod != act.prod {
 					t.Errorf("invalid production\nwant: %v\ngot: %v\ntest: %+v", act.prod, a.prod, tt)
+					continue
 				}
 			}
+		}
+
+		if len(actualActions.actions) != len(tt.action) {
+			t.Errorf("invalid action\nwant: %v item(s)\ngot: %v item(s)\ntest: %+v", len(tt.action), len(actualActions.actions), tt)
+			continue
 		}
 
 		if tt.reducibleByEOF {
@@ -262,6 +295,44 @@ func TestParsingTable(t *testing.T) {
 				t.Errorf("production is mismatched\nwant: %v\ngot: %v\ntest: %+v", eProd, aProd, tt)
 			}
 			continue
+		}
+
+		if len(tt.goTo) > 0 {
+			actualGoTos, ok := slrPT.goTo[kernelFp]
+			if !ok {
+				t.Errorf("failed to get gotos. state: %v\ntest: %+v", kernelFp, tt)
+				continue
+			}
+
+			for sym, goTo := range tt.goTo {
+				aKernelFp, ok := actualGoTos[V(sym)]
+				if !ok {
+					t.Errorf("failed to get a goto. state: %v, symbol: %v\ntest: %+v", kernelFp, sym, tt)
+					continue
+				}
+
+				k, err := genKernel(tests[goTo].kernels, st, prods)
+				if err != nil {
+					t.Error(err)
+					continue
+				}
+
+				eKernelFp := k.Fingerprint()
+				if eKernelFp.IsNil() {
+					t.Errorf("the fingerprint of the kernel is nil\ntest: %+v", tt)
+					continue
+				}
+
+				if aKernelFp != eKernelFp {
+					t.Errorf("invalid next state\nwant: %v\ngot: %v\ntest: %+v", eKernelFp, aKernelFp, tt)
+					continue
+				}
+			}
+
+			if len(actualGoTos) != len(tt.goTo) {
+				t.Errorf("invalid goto\nwant: %v item(s)\ngot: %v item(s)\ntest: %+v", len(tt.goTo), len(actualGoTos), tt)
+				continue
+			}
 		}
 	}
 }
