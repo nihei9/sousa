@@ -54,6 +54,7 @@ type Frame struct {
 
 type Parser interface {
 	Parse() (*AST, error)
+	SetSourceFilePath(string)
 }
 
 type parser struct {
@@ -62,6 +63,8 @@ type parser struct {
 	stateStack   []*Frame
 	currentState *Frame
 	ast          *AST
+
+	sourceFilePath string
 }
 
 func NewParser(lex Lexer) (Parser, error) {
@@ -74,6 +77,10 @@ func NewParser(lex Lexer) (Parser, error) {
 		peekedTok:  nil,
 		stateStack: []*Frame{},
 	}, nil
+}
+
+func (p *parser) SetSourceFilePath(path string) {
+	p.sourceFilePath = path
 }
 
 func (p *parser) Parse() (ast *AST, err error) {
@@ -220,7 +227,11 @@ func (p *parser) consume(expected ...TokenType) Token {
 		}
 	}
 
-	panic(fmt.Errorf("unexpected token. want: %v, got: %v", expected, tok.Type()))
+	panic(&SyntaxError{
+		file:     p.sourceFilePath,
+		position: tok.Pos(),
+		message:  fmt.Sprintf("unexpected token; expected: %v, actual: %v", expected, tok.Type()),
+	})
 }
 
 func (p *parser) peek() TokenType {
