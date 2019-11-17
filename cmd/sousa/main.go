@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"os"
@@ -6,10 +6,28 @@ import (
 	"github.com/nihei9/sousa/ast2grammar"
 	"github.com/nihei9/sousa/grammar"
 	"github.com/nihei9/sousa/parser"
+	"github.com/nihei9/sousa/writer"
 	"github.com/spf13/cobra"
 )
 
-func NewCmd() *cobra.Command {
+func main() {
+	os.Exit(doMain())
+}
+
+func doMain() int {
+	cmd := newCmd()
+	cmd.SetOutput(os.Stdout)
+	err := cmd.Execute()
+	if err != nil {
+		cmd.SetOutput(os.Stderr)
+		cmd.Println(err)
+		return 1
+	}
+
+	return 0
+}
+
+func newCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "sousa",
 		Short:         "Sousa is a parsing table generator",
@@ -68,7 +86,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer prodsFile.Close()
-	prodsWriter := NewProductionsWriter(g.Productions)
+	prodsWriter := writer.NewProductionsWriter(g.Productions)
 	prodsWriter.Write(prodsFile)
 
 	actionFile, err := os.OpenFile("action", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
@@ -76,7 +94,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer actionFile.Close()
-	actionWriter := NewActionWriter(parsingTable, g.Productions)
+	actionWriter := writer.NewActionWriter(parsingTable, g.Productions)
 	actionWriter.Write(actionFile)
 
 	gotoFile, err := os.OpenFile("goto", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
@@ -84,7 +102,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer gotoFile.Close()
-	gotoWriter := NewGoToWriter(parsingTable)
+	gotoWriter := writer.NewGoToWriter(parsingTable)
 	gotoWriter.Write(gotoFile)
 
 	return nil
